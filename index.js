@@ -11,12 +11,14 @@ function cunningWORK() {
     // <link rel="icon" href="src/cunning-work.png" type="image/png">
     // <link rel="apple-touch-icon" href="src/cunning-work.png" type="image/png">
 
-    let cacheOrPromise = typeof caches === 'undefined' ? undefined : caches?.open('v1');
-    if (cacheOrPromise) cacheOrPromise.then(cache => cacheOrPromise = cache);
+    /** @type {ReturnType<typeof caches.open> | Awaited<ReturnType<typeof caches.open>>} */
+    let cacheOrPromise = caches.open('v1').then(cache => cacheOrPromise = cache);
 
     registerServiceWorker();
 
     window.addEventListener('message', e => handleFrameMessage(e));
+
+    initUI();
 
     async function initUI() {
       document.title = 'Cunning WORK';
@@ -25,12 +27,14 @@ function cunningWORK() {
       <h1>Cunning WORK</h1>
       <p>
       <div><input id=addPath placeholder=path> <button id=addButton>Add</button></div>
-      <textarea id=addContent>
+      <textarea id=addContent></textarea>
       </p>
       `;
-      document.appendChild(content);
+      if (!document.body) document.body = document.createElement('body');
+      document.body.appendChild(content);
 
-      document.getElementById('addButton').onclick = handleAddClick;
+      const addButton = /** @type {HTMLButtonElement} */(document.getElementById('addButton'));
+      addButton.onclick = handleAddClick;
 
       const cacheKeys = await (await cacheOrPromise)?.keys();
       if (cacheKeys?.length) {
@@ -48,10 +52,8 @@ function cunningWORK() {
       }
 
       async function handleAddClick() {
-        /** @type {HTMLInputElement} */
-        const addPath = document.getElementById('addPath');
-        /** @type {HTMLTextAreaElement} */
-        const addContent = document.getElementById('addContent');
+        const addPath = /** @type {HTMLInputElement} */(document.getElementById('addPath'));
+        const addContent = /** @type {HTMLTextAreaElement} */(document.getElementById('addContent'));
 
         addPath.disabled = true;
         addContent.disabled = true;
@@ -77,7 +79,7 @@ function cunningWORK() {
       }
     }
 
-    function registerServiceWorker() {
+    async function registerServiceWorker() {
       console.log('cunningWORK: from runBrowserWindow');
       const registration = await navigator.serviceWorker.register(
         'index.js',
@@ -95,7 +97,7 @@ function cunningWORK() {
       }
     }
 
-    function handleFrameMessage(e) {
+    async function handleFrameMessage(e) {
       if (typeof e.data?.path !== 'string')
         return console.warn('Unknown message ', e);
 
@@ -132,11 +134,12 @@ function cunningWORK() {
     });
 
 
-    console.log(() => {
-      self.addEventListener('fetch', (event) => {
-        console.log('TODO: queue any requests not matching in the cache');
-        event.respondWith({})
-      });
+    self.addEventListener('fetch', (event) => {
+      console.log('fetch ', event.request);
+      event.respondWith((async () => {
+        const cache = await cacheOrPromise;
+        return cache.match(event.request)
+      }));
     });
 
     console.log('events registered OK');
