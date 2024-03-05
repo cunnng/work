@@ -113,9 +113,9 @@ function cunningWORK() {
     }
   }
 
-  async function runServiceWorker() {
+  function runServiceWorker() {
     console.log('cunningWORK: from - runServiceWorker');
-    const cache = await caches.open('v1');
+    const cacheOrPromise = caches.open('v1');
 
     self.addEventListener('activate', event => event.waitUntil(async () => {
       console.log('NOOP: activating service worker');
@@ -135,7 +135,10 @@ function cunningWORK() {
 
     self.addEventListener('fetch', (event) => {
       console.log('fetch ', event.request);
-      event.respondWith(cache.match(event.request));
+      event.respondWith((async () => {
+        const cache = await cacheOrPromise;
+        return cache.match(event.request);
+      })());
     });
 
     console.log('events registered OK');
