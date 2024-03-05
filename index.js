@@ -11,8 +11,7 @@ function cunningWORK() {
     // <link rel="icon" href="src/cunning-work.png" type="image/png">
     // <link rel="apple-touch-icon" href="src/cunning-work.png" type="image/png">
 
-    /** @type {ReturnType<typeof caches.open> | Awaited<ReturnType<typeof caches.open>>} */
-    let cacheOrPromise = caches.open('v1').then(cache => cacheOrPromise = cache);
+    const cache = await caches.open('v1');
 
     registerServiceWorker();
 
@@ -36,7 +35,7 @@ function cunningWORK() {
       const addButton = /** @type {HTMLButtonElement} */(document.getElementById('addButton'));
       addButton.onclick = handleAddClick;
 
-      const cacheKeys = await (await cacheOrPromise)?.keys();
+      const cacheKeys = await cache.keys();
       if (cacheKeys?.length) {
         const ul = document.createElement('ul');
         for (const key of cacheKeys) {
@@ -60,7 +59,6 @@ function cunningWORK() {
         let succeed = false;
         try {
 
-          const cache = await cacheOrPromise;
           await handleFrameMessage({
             data: {
               path: addPath.value,
@@ -103,10 +101,10 @@ function cunningWORK() {
 
       if (e.data.delete) {
         console.log('Deleting ', e.data);
-        (await cacheOrPromise)?.delete(e.data.path);
+        cache.delete(e.data.path);
       } else {
         console.log('Storing ', e.data);
-        (await cacheOrPromise)?.put(e.data.path, new Response(e.data.content));
+        cache.put(e.data.path, new Response(e.data.content));
       }
 
       navigator.serviceWorker.ready.then((registration) => {
@@ -115,8 +113,9 @@ function cunningWORK() {
     }
   }
 
-  function runServiceWorker() {
+  async function runServiceWorker() {
     console.log('cunningWORK: from - runServiceWorker');
+    const cache = await caches.open('v1');
 
     self.addEventListener('activate', event => event.waitUntil(async () => {
       console.log('NOOP: activating service worker');
@@ -136,10 +135,7 @@ function cunningWORK() {
 
     self.addEventListener('fetch', (event) => {
       console.log('fetch ', event.request);
-      event.respondWith((async () => {
-        const cache = await cacheOrPromise;
-        return cache.match(event.request)
-      }));
+      event.respondWith(cache.match(event.request));
     });
 
     console.log('events registered OK');
