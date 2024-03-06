@@ -36,19 +36,12 @@ function cunningWORK() {
       const addButton = /** @type {HTMLButtonElement} */(document.getElementById('addButton'));
       addButton.onclick = handleAddClick;
 
+      var ul;
+
       const cacheKeys = await cache.keys();
       if (cacheKeys?.length) {
-        const ul = document.createElement('ul');
-        for (const key of cacheKeys) {
-          const linkLI = document.createElement('li');
-          const linkA = document.createElement('a');
-          linkA.target = '_blank';
-          linkA.href = key.url;
-          linkA.textContent = key.url;
-          linkLI.appendChild(linkA);
-          ul.appendChild(linkLI);
-        }
-        content.appendChild(ul);
+        
+        listCache();
       }
 
       async function handleAddClick() {
@@ -72,9 +65,30 @@ function cunningWORK() {
           addPath.disabled = false;
           addContent.disabled = false;
 
+          listCache();
+
           if (!succeed) alert('Failed.');
         }
 
+      }
+
+      function listCache() {
+        if (!ul) {
+          ul = document.createElement('ul');
+          document.body.appendChild(ul);
+        } else {
+          ul.innerHTML = '';
+        }
+
+        for (const key of cacheKeys) {
+          const linkLI = document.createElement('li');
+          const linkA = document.createElement('a');
+          linkA.target = '_blank';
+          linkA.href = key.url;
+          linkA.textContent = key.url;
+          linkLI.appendChild(linkA);
+          ul.appendChild(linkLI);
+        }
       }
     }
 
