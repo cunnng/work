@@ -110,13 +110,25 @@ function cunningWORK() {
         console.log('Deleting ', e.data);
         cache.delete(e.data.path);
       } else {
-        console.log('Storing ', e.data);
-        cache.put(e.data.path, new Response(e.data.content));
+        const contentType = e.data.contentType || deriveContentType(e.data.path);
+        console.log('Storing ', e.data, contentType);
+        cache.put(e.data.path, new Response(e.data.content, { headers: { 'Content-Type': contentType } }));
       }
 
       navigator.serviceWorker.ready.then((registration) => {
         registration.active?.postMessage({ path: e.data.path  });
       });
+    }
+
+    function deriveContentType(path) {
+      if (/\.html$/i.test(path)) return 'text/html';
+      if (!/\./.test(path)) return 'text/html';
+      if (/\.js$/i.test(path)) return 'application/javascript';
+      if (/\.css$/i.test(path)) return 'text/css';
+      if (/\.png$/i.test(path)) return 'image/png';
+      if (/\.jpg$/i.test(path)) return 'image/jpeg';
+      if (/\.jpeg$/i.test(path)) return 'image/jpeg';
+      if (/\.gif$/i.test(path)) return 'image/gif';
     }
   }
 
