@@ -13,6 +13,7 @@ function cunningWORK() {
 
     const cache = await caches.open('v1');
 
+    installCache();
     registerServiceWorker();
 
     window.addEventListener('message', e => handleFrameMessage(e));
@@ -62,7 +63,7 @@ function cunningWORK() {
           await handleFrameMessage({
             data: {
               path: addPath.value,
-              content: new Response(addContent.value)
+              content: addContent.value
             }
           });
 
@@ -77,6 +78,12 @@ function cunningWORK() {
       }
     }
 
+    async function installCache() {
+      const cache = await caches.open('v1');
+      await cache.put('/work/', new Response('<' + 'script' + ' src=index.js></' + 'script' + '>\n<' + '!-- injected --' + '>', { headers: { 'Content-Type': 'text/html' } }));
+      await cache.put('/work/index.js', new Response('// @ts-check\n\n' + cunningWORK + ' cunningWORK();\n', { headers: { 'Content-Type': 'application/javascript' } }));
+    }
+
     async function registerServiceWorker() {
       console.log('cunningWORK: from runBrowserWindow');
       const registration = await navigator.serviceWorker.register(
@@ -88,10 +95,6 @@ function cunningWORK() {
 
       if (registration.installing) {
         console.log("Service worker installing");
-        const cache = await caches.open('v1');
-        await cache.put('/work/', new Response('<' + 'script' + ' src=index.js></' + 'script' + '>'));
-        await cache.put('/work/index.js', new Response('// inject\n' + cunningWORK + ' cunningWORK();'));
-
       } else if (registration.waiting) {
         console.log("Service worker installed");
       } else if (registration.active) {
